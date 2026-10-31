@@ -1,0 +1,76 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "nameEn": {
+      "type": "STRING",
+      "description": "Standard English anatomical name with abbreviation (e.g., 'Thoracodorsal n.', 'Profunda brachii a.', 'Pronator teres m.')"
+    },
+    "nameZh": {
+      "type": "STRING",
+      "description": "Traditional Chinese anatomical name used in Taiwan medical schools (e.g., '胸背神經', '肱深動脈')"
+    },
+    "category": {
+      "type": "STRING",
+      "enum": ["Artery", "Vein", "Nerve", "Muscle", "Space"],
+      "description": "Anatomical structure category"
+    },
+    "description": {
+      "type": "STRING",
+      "description": "Concise gross anatomy description including origin, course, accompaniment, and innervation/supply"
+    },
+    "morphemes": {
+      "type": "ARRAY",
+      "description": "Etymological breakdown into prefix, combining root/adjective, and noun abbreviation",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "part": { "type": "STRING", "description": "Morpheme text, e.g., 'Thoraco-', 'dorsal', 'n.'" },
+          "pos": { "type": "STRING", "enum": ["prefix", "adj.", "n."], "description": "Part of speech tag" },
+          "meaning": { "type": "STRING", "description": "Bilingual root meaning, e.g., '胸廓的 (Thorax)'" }
+        },
+        "required": ["part", "pos", "meaning"]
+      }
+    },
+    "distractors": {
+      "type": "ARRAY",
+      "description": "2 to 3 plausible distractor morphemes for Duolingo-style word bank quiz",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "part": { "type": "STRING" },
+          "pos": { "type": "STRING", "enum": ["prefix", "adj.", "n."] },
+          "meaning": { "type": "STRING" }
+        },
+        "required": ["part", "pos", "meaning"]
+      }
+    },
+    "pathwaySummary": {
+      "type": "STRING",
+      "description": "Continuous anatomical pathway: Upstream origin -> Landmark -> Target structure -> Downstream branches/targets"
+    },
+    "regionGroup": {
+      "type": "STRING",
+      "description": "Anatomical compartment and layer grouping (e.g., '前臂屈肌側淺層 4', '臂神經叢後索')"
+    },
+    "callout": {
+      "type": "STRING",
+      "description": "Spot-test (跑台) practical identification tip, key companion vessel/nerve, or anatomical landmark"
+    },
+    "clinical": {
+      "type": "STRING",
+      "description": "Clinical correlation, anatomical variation, or common spot-exam pitfall"
+    }
+  },
+  "required": [
+    "nameEn",
+    "nameZh",
+    "category",
+    "description",
+    "morphemes",
+    "distractors",
+    "pathwaySummary",
+    "regionGroup",
+    "callout",
+    "clinical"
+  ]
+}

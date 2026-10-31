@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AnatoSpot — 解剖學跑台漸進式學習與知識庫系統 (Open-Source MVP)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- 引入外部共用樣式表 (原 01_core_shared/shared_styles.css) -->
+  <link rel="stylesheet" href="./assets/shared_styles.css" />
+</head>
+<body class="min-h-screen flex flex-col">
+
+<header class="sticky top-0 z-30 bg-white border-b-2 border-slate-200 px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500 border-b-4 border-emerald-700 flex items-center justify-center text-white font-black text-lg tracking-tighter">
+          AS
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg text-slate-800 tracking-tight">AnatoSpot</h1>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Notebook 上肢題庫完整版 v0.2</span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">解剖學跑台漸進式學習 ‧ 字源拆解 ‧ 脈絡樹狀圖 ‧ 區域分組 ‧ 實拍圖釘指認</p>
+        </div>
+      </div>
+
+      <!-- Main Mode Switcher Tabs -->
+      <nav class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200" aria-label="主要功能切換">
+        <button id="nav-tab-quiz" type="button" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-white text-emerald-700 shadow-sm">
+          <span>🎯</span>
+          <span>漸進式闖關</span>
+        </button>
+        <button id="nav-tab-spot" type="button" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <span>📍</span>
+          <span>照片跑台指認</span>
+        </button>
+        <button id="nav-tab-kb" type="button" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <span>🗂️</span>
+          <span>單字卡與知識庫 (AI + Notion)</span>
+        </button>
+        <button id="nav-tab-schema" type="button" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <span>⚙️</span>
+          <span>架構與匯出</span>
+        </button>
+      </nav>
+
+      <!-- Gamification Stats Bar (No Cartoon Mascots, Clean Medical Metrics) -->
+      <div class="flex items-center gap-3 text-xs sm:text-sm font-bold">
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700" title="連續答對題數">
+          <span>🔥</span>
+          <span id="stat-streak">3 連勝</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-700" title="累積精熟度 XP">
+          <span>⚡</span>
+          <span id="stat-xp">120 XP</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+
+    <!-- =======================================================================
+         VIEW 1: DUOLINGO-STYLE PROGRESSIVE 3-LAYER QUIZ (漸進式三大層次闖關)
+         ======================================================================= -->
+    <section id="view-quiz" class="space-y-6">
+      <!-- Sub-Layer Selector Pills (3 Layers) -->
+      <div class="bg-white rounded-2xl border-2 border-slate-200 p-4 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Module 01 · Duolingo 漸進式作答介面</span>
+            <h2 class="text-lg font-extrabold text-slate-800 mt-0.5">選擇跑台訓練層次：從「單一字源」到「連續拓撲」與「同區肌群」</h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="layer-btn-1" type="button" class="btn-3d btn-3d-selected px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-sky-600 text-white text-xs flex items-center justify-center">1</span>
+              <span>單一構造：字根詞源拆解</span>
+            </button>
+            <button id="layer-btn-2" type="button" class="btn-3d btn-3d-neutral px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-300 text-slate-700 text-xs flex items-center justify-center">2</span>
+              <span>連續構造：血管/神經分段樹狀圖</span>
+            </button>
+            <button id="layer-btn-3" type="button" class="btn-3d btn-3d-neutral px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-300 text-slate-700 text-xs flex items-center justify-center">3</span>
+              <span>同區構造：4+1+3 肌群分層歸納</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Duolingo Progress Bar -->
+        <div class="mt-4 flex items-center gap-3">
+          <span id="quiz-progress-label" class="text-xs font-bold text-slate-500 whitespace-nowrap">進度 1 / 4</span>
+          <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200 p-0.5">
+            <div id="quiz-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 25%"></div>
+          </div>
+          <button id="btn-reset-current-layer" type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-800 whitespace-nowrap px-2 py-1 rounded hover:bg-slate-100">
+            重置本關
+          </button>
+        </div>
+      </div>
+
+      <!-- LAYER 1 STAGE: MORPHEME WORD BUILDER (單一構造字根詞源及前後綴拆解) -->
+      <div id="stage-layer-1" class="bg-white rounded-3xl border-2 border-slate-200 p-6 sm:p-8 shadow-sm max-w-4xl mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800 font-bold text-xs">Layer 1 · 字源拆解與詞性標註</span>
+            <span id="l1-category-badge" class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-bold text-xs">Nerve (神經)</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <select id="l1-cat-filter" class="rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold bg-white text-slate-700">
+              <option value="ALL">全部上肢構造 (All)</option>
+              <option value="Artery">上肢動脈 (Artery)</option>
+              <option value="Vein">上肢靜脈 (Vein)</option>
+              <option value="Nerve">上肢神經 (Nerve)</option>
+              <option value="Muscle">上肢肌肉 (Muscle)</option>
+              <option value="Space">腋窩間隙與韌帶 (Space)</option>
+            </select>
+            <div id="l1-question-dots" class="flex flex-wrap items-center gap-1 max-w-xs sm:max-w-md"></div>
+          </div>
+        </div>
+
+        <!-- Prompt Prompt Area -->
+        <div class="my-6">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">請依序組合字根積木並確認詞性結構</p>
+          <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div>
+              <h3 id="l1-target-title" class="text-xl sm:text-2xl font-black text-slate-800">胸背神經 (Thoracodorsal n.)</h3>
+              <p id="l1-target-desc" class="text-sm text-slate-600 mt-1">支配闊背肌 (Latissimus dorsi m.)，源自臂神經叢後索 (Posterior cord, C6–C8)。</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-mono-code bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600" id="l1-target-formula">
+                目標結構：adj. + adj. + n.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Answer Drop Tray (Duolingo line tray) -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-500">你的字源拆解組合（點擊積木可退回）：</span>
+            <button id="l1-clear-tray" type="button" class="text-xs font-semibold text-sky-600 hover:underline">清空重排</button>
+          </div>
+          <div id="l1-answer-tray" class="min-h-[84px] p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 flex flex-wrap items-center gap-2.5">
+            <!-- Dynamically rendered selected morpheme blocks -->
+          </div>
+        </div>
+
+        <!-- POS Legend -->
+        <div class="flex flex-wrap items-center gap-3 text-xs mb-3 text-slate-500">
+          <span class="font-bold">詞性色標說明：</span>
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Prefix (前綴)</span>
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Adj. / Combining Root (形容詞性字根)</span>
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Noun / Abbr. (名詞分類縮寫)</span>
+        </div>
+
+        <!-- Word Bank (Shuffled Morphemes + Distractors) -->
+        <div id="l1-word-bank" class="p-4 rounded-2xl bg-slate-100/80 border border-slate-200 flex flex-wrap items-center justify-center gap-3 min-h-[88px]">
+          <!-- Dynamically rendered word bank buttons -->
+        </div>
+
+        <!-- Action & Instant Duolingo Feedback Banner -->
+        <div id="l1-feedback-area" class="mt-6 pt-5 border-t-2 border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div id="l1-feedback-message" class="text-sm text-slate-500 font-medium">
+            💡 點擊下方帶有詞性標籤的字根積木，拼出完整的解剖學拉丁/英文詞源結構。
+          </div>
+          <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <button id="l1-btn-check" type="button" class="btn-3d btn-3d-green px-6 py-3 rounded-2xl font-extrabold text-sm w-full sm:w-auto">
+              檢查答案 (Check)
+            </button>
+            <button id="l1-btn-next" type="button" class="btn-3d btn-3d-blue px-6 py-3 rounded-2xl font-extrabold text-sm w-full sm:w-auto hidden">
+              下一題 (Continue) →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAYER 2 STAGE: CONTINUOUS PATHWAY TREE (連續構造分段變化與分支樹狀圖) -->
+      <div id="stage-layer-2" class="bg-white rounded-3xl border-2 border-slate-200 p-6 sm:p-8 shadow-sm max-w-5xl mx-auto hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-bold text-xs">Layer 2 · 連續構造分段變化與分支樹狀圖</span>
+            <h3 id="l2-pathway-title" class="text-xl font-black text-slate-800 mt-1">上肢動脈主幹與分支連續變化 (Subclavian a. → Axillary a. → Brachial a. → Radial / Ulnar a.)</h3>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="l2-switch-artery" type="button" class="btn-3d btn-3d-selected px-3 py-1.5 rounded-xl text-xs font-bold">
+              🩸 上肢動脈樹 (Axillary > Brachial > Radial)
+            </button>
+            <button id="l2-switch-nerve" type="button" class="btn-3d btn-3d-neutral px-3 py-1.5 rounded-xl text-xs font-bold">
+              ⚡ 臂神經叢後索與胸壁分支樹
+            </button>
+            <button id="l2-switch-nerve-ant" type="button" class="btn-3d btn-3d-neutral px-3 py-1.5 rounded-xl text-xs font-bold">
+              ⚡ 臂神經叢：外索與內索 (M字終末支)
+            </button>
+            <button id="l2-switch-vein" type="button" class="btn-3d btn-3d-neutral px-3 py-1.5 rounded-xl text-xs font-bold">
+              💙 上肢靜脈回流樹 (Cephalic / Basilic)
+            </button>
+          </div>
+        </div>
+
+        <p class="text-xs sm:text-sm text-slate-600 mt-3 bg-amber-50/80 border border-amber-200 rounded-xl px-4 py-2.5">
+          <strong>作答方式：</strong>請先點擊樹狀圖中閃爍的 <strong>「？ 待填入構造節點」</strong>，再從下方選項庫點選正確的血管或神經名稱填入，注意灰色膠囊標註的<strong>解剖分界標記 (Anatomical Landmark)</strong>！
+        </p>
+
+        <!-- Interactive Tree Canvas -->
+        <div id="l2-tree-container" class="my-6 p-5 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-x-auto">
+          <!-- Rendered by JS: Hierarchical Pathway Tree with Landmarks & Blank Slots -->
+        </div>
+
+        <!-- Option Pool for Tree Blanks -->
+        <div class="mt-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-500">候選構造選項庫（點擊填入上方選中的挖空節點）：</span>
+            <button id="l2-reset-tree" type="button" class="text-xs font-semibold text-sky-600 hover:underline">重置樹狀圖填空</button>
+          </div>
+          <div id="l2-option-bank" class="p-4 rounded-2xl bg-slate-100 border border-slate-200 flex flex-wrap gap-2.5">
+            <!-- Dynamically populated options -->
+          </div>
+        </div>
+
+        <div id="l2-feedback-banner" class="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-600 flex items-center justify-between">
+          <span id="l2-feedback-text">請選擇上方任一「？ 待填入節點」開始串聯解剖脈絡。</span>
+          <span id="l2-score-badge" class="font-extrabold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full text-xs">已完成 0 / 4</span>
+        </div>
+      </div>
+
+      <!-- LAYER 3 STAGE: REGIONAL GROUPING MATRIX (同區構造分組呈現：前臂前側 4+1+3 肌群) -->
+      <div id="stage-layer-3" class="bg-white rounded-3xl border-2 border-slate-200 p-6 sm:p-8 shadow-sm max-w-5xl mx-auto hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">Layer 3 · 同區構造分層歸納 (Notebook 上肢全分區)</span>
+            <h3 id="l3-group-title" class="text-xl font-black text-slate-800 mt-1">前臂屈肌側 (前側)：4 + 1 + 3 分層挑戰</h3>
+            <p id="l3-group-subtitle" class="text-xs text-slate-500 mt-0.5">跑台重點：注意深淺層次與內外/伸屈（前臂看拇指為外側橈側、小指為內側尺側）。</p>
+            <div class="flex flex-wrap gap-1.5 mt-3">
+              <button id="l3-group-forearm-ant" type="button" class="btn-3d btn-3d-selected px-2.5 py-1 rounded-lg text-xs font-bold">前臂屈肌側 (4+1+3)</button>
+              <button id="l3-group-forearm-post" type="button" class="btn-3d btn-3d-neutral px-2.5 py-1 rounded-lg text-xs font-bold">前臂伸肌側 (6+5 含鼻煙壺)</button>
+              <button id="l3-group-arm-scap" type="button" class="btn-3d btn-3d-neutral px-2.5 py-1 rounded-lg text-xs font-bold">上臂前/後側與肩胛肌群</button>
+              <button id="l3-group-hand" type="button" class="btn-3d btn-3d-neutral px-2.5 py-1 rounded-lg text-xs font-bold">手掌肌群 (大魚際/小魚際/掌心)</button>
+              <button id="l3-group-spaces" type="button" class="btn-3d btn-3d-neutral px-2.5 py-1 rounded-lg font-bold text-xs">腋窩三間隙 (Spaces & Intervals)</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="l3-btn-auto-demo" type="button" class="btn-3d btn-3d-neutral px-3 py-1.5 rounded-xl text-xs font-bold">
+              👁️ 切換完整解答對照模式
+            </button>
+            <button id="l3-btn-reset" type="button" class="btn-3d btn-3d-neutral px-3 py-1.5 rounded-xl text-xs font-bold">
+              🔄 重新洗牌測驗
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 1: Select active layer bucket -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
+          <!-- Superficial Layer (4) -->
+          <div id="l3-bucket-superficial" class="rounded-2xl border-2 border-sky-400 bg-sky-50/40 p-4 flex flex-col justify-between transition cursor-pointer">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-sky-600 text-white">第一層：淺層 (Superficial · 4 條)</span>
+                <span id="l3-count-superficial" class="text-xs font-bold text-sky-700">0 / 4</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1.5">共同起點：肱骨內上髁 (Medial epicondyle of humerus)，由橈側至尺側排列。</p>
+              <div id="l3-slots-superficial" class="mt-3 space-y-2 min-h-[160px]"></div>
+            </div>
+            <div class="mt-3 pt-2 border-t border-sky-200/60 text-[11px] font-semibold text-sky-800">
+              💡 點擊此分層框設為目標，再點下方肌肉歸入
+            </div>
+          </div>
+
+          <!-- Intermediate Layer (1) -->
+          <div id="l3-bucket-intermediate" class="rounded-2xl border-2 border-slate-200 bg-slate-50/60 p-4 flex flex-col justify-between transition cursor-pointer">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500 text-white">第二層：中層 (Intermediate · 1 條)</span>
+                <span id="l3-count-intermediate" class="text-xs font-bold text-amber-700">0 / 1</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1.5">位於淺層與深層之間，肌腱分為四束止於第 2–5 指中節指骨底。</p>
+              <div id="l3-slots-intermediate" class="mt-3 space-y-2 min-h-[160px]"></div>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200 text-[11px] font-semibold text-slate-500">
+              點擊切換為目前填入目標分層
+            </div>
+          </div>
+
+          <!-- Deep Layer (3) -->
+          <div id="l3-bucket-deep" class="rounded-2xl border-2 border-slate-200 bg-slate-50/60 p-4 flex flex-col justify-between transition cursor-pointer">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-purple-600 text-white">第三層：深層 (Deep · 3 條)</span>
+                <span id="l3-count-deep" class="text-xs font-bold text-purple-700">0 / 3</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1.5">貼近橈骨、尺骨與骨間膜，主要由前骨間神經 (AIN) 與尺神經支配。</p>
+              <div id="l3-slots-deep" class="mt-3 space-y-2 min-h-[160px]"></div>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200 text-[11px] font-semibold text-slate-500">
+              點擊切換為目前填入目標分層
+            </div>
+          </div>
+        </div>
+
+        <!-- Unassigned Muscle Pool -->
+        <div class="p-4 rounded-2xl bg-slate-100 border border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span class="text-xs font-bold text-slate-600">待分類的前臂前側肌肉卡片（點擊卡片將其歸入目前選中的分層框）：</span>
+            <span id="l3-active-target-indicator" class="text-xs font-bold text-sky-700 bg-sky-100 px-2.5 py-1 rounded-lg">
+              目前選中填入目標：第一層（淺層 4 條）
+            </span>
+          </div>
+          <div id="l3-muscle-pool" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <!-- Dynamically rendered 8 forearm muscles -->
+          </div>
+        </div>
+
+        <div id="l3-feedback-bar" class="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-medium text-slate-600">
+          提示：先點選上方「淺層 (4)」、「中層 (1)」或「深層 (3)」區塊，再點擊下方對應的肌肉卡片完成 4+1+3 分組。
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         VIEW 2: CUSTOM PHOTO PIN SPOT-TEST (實際大體/模型照片上傳與圖釘標記跑台)
+         ======================================================================= -->
+    <section id="view-spot" class="space-y-6 hidden">
+      <div class="bg-white rounded-3xl border-2 border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-bold text-xs">Module 02 · 跑台照片圖釘指認系統 (Pin Spot-Test)</span>
+              <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs">嚴格本地圖片 ‧ 零湊數假圖</span>
+            </div>
+            <h2 class="text-xl font-black text-slate-800 mt-1">自訂大體/模型照片上傳與圖釘 (Pin) 跑台模擬器</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              為確保解剖構造的嚴謹性，系統<strong>絕不塞入隨機網路圖片或 AI 生成假圖</strong>。請直接上傳您的實驗室模型、圖譜或共筆照片（僅保存在您的瀏覽器記憶體中，不會外傳），即可在圖片上釘選構造並開始跑台倒數測驗。
+            </p>
+          </div>
+
+          <!-- Upload & Sub-mode Controls -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <label for="spot-image-upload" class="btn-3d btn-3d-blue px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold cursor-pointer inline-flex items-center gap-2">
+              <span>📷 上傳跑台/模型照片</span>
+              <input id="spot-image-upload" type="file" accept="image/*" class="hidden" />
+            </label>
+            <button id="spot-mode-edit-btn" type="button" class="btn-3d btn-3d-selected px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold">
+              ✏️ 標記圖釘模式 (Editor)
+            </button>
+            <button id="spot-mode-quiz-btn" type="button" class="btn-3d btn-3d-neutral px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold">
+              ⏱️ 跑台測驗模式 (Spot Quiz)
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Split Workspace: Left Image Canvas with Pins / Right Pin List or Spot Quiz -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+          <!-- Left 7 Cols: Interactive Pin Canvas -->
+          <div class="lg:col-span-7 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <span id="spot-canvas-instruction" class="text-xs font-bold text-slate-600">
+                📍 編輯模式：上傳照片後，直接點擊畫面任意位置即可新增跑台圖釘 (Pin)
+              </span>
+              <button id="spot-use-schematic-btn" type="button" class="text-xs font-semibold text-sky-600 hover:underline">
+                尚未選擇照片？載入純幾何分區練習板測試釘選功能
+              </button>
+            </div>
+
+            <!-- Image / Schematic Wrapper -->
+            <div id="spot-canvas-wrapper" class="relative w-full min-h-[380px] sm:min-h-[440px] rounded-2xl bg-slate-900 border-2 border-slate-300 overflow-hidden flex items-center justify-center select-none cursor-crosshair">
+              <!-- Empty State Notice before user uploads photo -->
+              <div id="spot-empty-placeholder" class="p-8 text-center max-w-md mx-auto text-slate-300 space-y-4">
+                <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto text-3xl">
+                  🔬
+                </div>
+                <h3 class="text-base font-bold text-white">等待載入您的解剖學照片</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                  請點擊右上角「<strong>📷 上傳跑台/模型照片</strong>」載入本機圖片（支援 JPG / PNG / WebP），或點擊下方按鈕使用<strong>純向量拓撲示意練習板</strong>先行體驗圖釘標記與跑台抽考流程。
+                </p>
+                <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                  <button id="spot-empty-load-schematic" type="button" class="btn-3d btn-3d-neutral px-4 py-2 rounded-xl text-xs font-bold text-slate-800">
+                    📐 載入幾何拓撲示意練習板 (含 4 個範例圖釘)
+                  </button>
+                </div>
+              </div>
+
+              <!-- User Uploaded Image Element -->
+              <img id="spot-user-image" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="使用者上傳之解剖跑台照片" class="max-w-full max-h-[520px] w-auto h-auto object-contain hidden pointer-events-none" />
+
+              <!-- Pure Geometric Schematic SVG (Strictly Non-AI, Clean Architectural Box Diagram for Testing Pin Mechanics) -->
+              <svg id="spot-schematic-svg" viewBox="0 0 800 500" class="w-full h-auto max-h-[520px] hidden pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="800" height="500" fill="#0f172a" />
+                <!-- Grid lines -->
+                <g stroke="#1e293b" stroke-width="1">
+                  <line x1="0" y1="100" x2="800" y2="100" />
+                  <line x1="0" y1="200" x2="800" y2="200" />
+                  <line x1="0" y1="300" x2="800" y2="300" />
+                  <line x1="0" y1="400" x2="800" y2="400" />
+                  <line x1="200" y1="0" x2="200" y2="500" />
+                  <line x1="400" y1="0" x2="400" y2="500" />
+                  <line x1="600" y1="0" x2="600" y2="500" />
+                </g>
+                <text x="24" y="36" fill="#94a3b8" font-size="13" font-family="Inter, Noto Sans TC" font-weight="bold">
+                  【純向量拓撲練習板】上肢血管與臂神經叢相對位置示意框（可隨時點擊右上角替換為真實大體/模型照片）
+                </text>
+                <!-- Landmarks Boxes -->
+                <rect x="60" y="70" width="160" height="60" rx="10" fill="#1e293b" stroke="#475569" stroke-dasharray="6 4" stroke-width="2" />
+                <text x="140" y="105" fill="#cbd5e1" font-size="13" text-anchor="middle" font-weight="bold">First Rib (第一肋骨外緣)</text>
+
+                <rect x="60" y="230" width="190" height="55" rx="10" fill="#1e293b" stroke="#475569" stroke-dasharray="6 4" stroke-width="2" />
+                <text x="155" y="262" fill="#cbd5e1" font-size="12" text-anchor="middle" font-weight="bold">Inferior border of Teres major</text>
+
+                <rect x="60" y="370" width="170" height="55" rx="10" fill="#1e293b" stroke="#475569" stroke-dasharray="6 4" stroke-width="2" />
+                <text x="145" y="402" fill="#cbd5e1" font-size="12" text-anchor="middle" font-weight="bold">Neck of Radius (橈骨頸)</text>
+
+                <!-- Main Arterial Trunk Schematic Line -->
+                <path d="M 380 50 L 380 255 L 380 395 L 300 475 M 380 395 L 460 475" stroke="#ef4444" stroke-width="10" stroke-linecap="round" fill="none" />
+                <!-- Subscapular -> Thoracodorsal branch -->
+                <path d="M 380 190 L 530 230 L 580 340" stroke="#f87171" stroke-width="6" stroke-linecap="round" fill="none" />
+                <!-- Companion Nerves -->
+                <path d="M 550 80 L 595 340" stroke="#facc15" stroke-width="5" stroke-dasharray="10 4" stroke-linecap="round" fill="none" />
+                <text x="650" y="340" fill="#fde047" font-size="12" font-weight="bold">Posterior Cord Branch</text>
+              </svg>
+
+              <!-- Interactive Pins Overlay Layer -->
+              <div id="spot-pins-layer" class="absolute inset-0 pointer-events-none">
+                <!-- Dynamically rendered Pin markers -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right 5 Cols: Editor Panel OR Active Spot Test Runner -->
+          <div class="lg:col-span-5 flex flex-col">
+            <!-- EDITOR PANEL -->
+            <div id="spot-editor-panel" class="bg-slate-50 rounded-2xl border-2 border-slate-200 p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <h3 class="font-extrabold text-slate-800 text-base">📌 已標記的跑台圖釘清單</h3>
+                  <span id="spot-pin-count-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">0 個圖釘</span>
+                </div>
+
+                <!-- Form to edit currently selected or newly clicked pin -->
+                <div id="spot-pin-form-box" class="mt-4 p-4 rounded-xl bg-white border border-slate-200 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span id="spot-editing-pin-label" class="text-xs font-extrabold text-sky-700">點擊左側圖片新增圖釘，或點選下方清單編輯</span>
+                  </div>
+                  <div>
+                    <label for="spot-pin-entity-select" class="block text-xs font-bold text-slate-600 mb-1">連結知識庫構造（自動帶入字源與中英對照）：</label>
+                    <select id="spot-pin-entity-select" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm bg-white focus:outline-none focus:border-sky-500">
+                      <!-- Populated from DB entities -->
+                    </select>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label for="spot-pin-custom-en" class="block text-xs font-bold text-slate-600 mb-1">跑台標準英文答案：</label>
+                      <input id="spot-pin-custom-en" type="text" placeholder="例：Thoracodorsal n." class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs sm:text-sm" />
+                    </div>
+                    <div>
+                      <label for="spot-pin-custom-zh" class="block text-xs font-bold text-slate-600 mb-1">中文名稱：</label>
+                      <input id="spot-pin-custom-zh" type="text" placeholder="例：胸背神經" class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs sm:text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label for="spot-pin-hint" class="block text-xs font-bold text-slate-600 mb-1">跑台辨識特徵提示 (Landmark Hint)：</label>
+                    <input id="spot-pin-hint" type="text" placeholder="例：伴隨胸背動脈走在闊背肌深面" class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs sm:text-sm" />
+                  </div>
+                  <div class="flex items-center justify-end gap-2 pt-1">
+                    <button id="spot-save-pin-btn" type="button" class="btn-3d btn-3d-green px-4 py-2 rounded-xl text-xs font-extrabold">
+                      儲存圖釘資料
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pin Items List -->
+                <div id="spot-pin-list" class="mt-4 space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  <!-- Rendered by JS -->
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+                <button id="spot-clear-pins-btn" type="button" class="text-xs font-bold text-rose-600 hover:underline">
+                  清空全部圖釘
+                </button>
+                <button id="spot-start-quiz-cta" type="button" class="btn-3d btn-3d-blue px-4 py-2 rounded-xl text-xs font-extrabold">
+                  進入跑台抽考模式 →
+                </button>
+              </div>
+            </div>
+
+            <!-- QUIZ RUNNER PANEL (Hidden when in Editor mode) -->
+            <div id="spot-quiz-panel" class="bg-slate-50 rounded-2xl border-2 border-slate-200 p-5 flex-1 flex flex-col justify-between hidden">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <div>
+                    <span class="text-xs font-extrabold text-rose-600 uppercase">跑台實戰抽考 (Spot Exam)</span>
+                    <h3 id="spot-quiz-station-title" class="text-lg font-black text-slate-800">第 1 站：請指認紅色閃爍圖釘 #1</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span id="spot-timer-badge" class="px-3 py-1 rounded-xl bg-slate-800 text-white font-mono-code text-xs font-bold">⏱️ 30s</span>
+                  </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                  <strong>跑台提示：</strong><span id="spot-quiz-hint-text">請觀察圖片中標號位置與鄰近構造關係</span>
+                </div>
+
+                <!-- Answer Input (Supports direct typing like real Spot Exam OR Multiple Choice toggle) -->
+                <div class="space-y-2">
+                  <label for="spot-quiz-input" class="block text-xs font-bold text-slate-700">直接輸入解剖構造英文或中文名稱（模擬跑台手寫答案卷）：</label>
+                  <input id="spot-quiz-input" type="text" placeholder="例如：Thoracodorsal n. 或 胸背神經" class="w-full rounded-xl border-2 border-slate-300 px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:border-sky-500 bg-white" />
+                </div>
+
+                <!-- Quick Choice Assist -->
+                <div>
+                  <span class="block text-xs font-bold text-slate-500 mb-2">或使用 Duolingo 選項卡快速作答：</span>
+                  <div id="spot-quiz-choices" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+
+                <div id="spot-quiz-feedback" class="p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-medium text-slate-600">
+                  作答後將顯示字根拆解與連續脈絡解析。
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
+                <button id="spot-quiz-check-btn" type="button" class="btn-3d btn-3d-green px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold flex-1">
+                  送出跑台答案
+                </button>
+                <button id="spot-quiz-next-btn" type="button" class="btn-3d btn-3d-blue px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold flex-1">
+                  下一站圖釘 →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         VIEW 3: QUIZLET FLASHCARDS + AI AGENT WORKFLOW + NOTION BLOCK EDITOR
+         ======================================================================= -->
+    <section id="view-kb" class="space-y-6 hidden">
+      <!-- Top Action Header: AI Agent Quick Input Workflow -->
+      <div class="bg-white rounded-3xl border-2 border-slate-200 p-6 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <span class="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 font-bold text-xs">Module 03 · Quizlet 閃卡 + AI Agent 自動解析 + Notion 區塊筆記</span>
+            <h2 class="text-xl font-black text-slate-800 mt-1">新增或修改解剖詞彙（AI Agent 結構化拆解工作流）</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              輸入新構造名稱後，AI Agent 工作流會自動拆解「前後綴與詞性」、檢索「上下游連續構造」與「所屬分區」，確認無誤後即可寫入單字卡並用 Notion 區塊自由擴充圖文。
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-500">目前詞庫收錄：</span>
+            <span id="kb-total-count" class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-xs">8 筆核心構造</span>
+          </div>
+        </div>
+
+        <!-- AI Agent API Engine & Endpoint Configuration Panel -->
+        <div class="mt-4 bg-slate-900 text-slate-100 rounded-2xl border-2 border-slate-700 p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/40 text-purple-300 font-mono-code text-xs font-bold">API ENGINE</span>
+              <div>
+                <h3 class="text-sm sm:text-base font-extrabold text-white">🔌 AI Agent 分析後端與 API 金鑰配置處</h3>
+                <p class="text-xs text-slate-400">支援前端直連 Gemini / OpenAI Structured Outputs，或轉發至自架 FastAPI 後端 (<code class="text-emerald-300">POST /api/analyze-anatomy</code>)</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="ai-api-status-badge" class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold">
+                ⚡ 預設：離線學術字典 + 規則引擎 (填入 API Key 即啟用真實 LLM)
+              </span>
+              <button id="ai-toggle-config-btn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-slate-200">
+                ⚙️ 展開/收合 API 設定
+              </button>
+            </div>
+          </div>
+
+          <!-- Expandable API Configuration Form -->
+          <div id="ai-config-body" class="pt-3 border-t border-slate-800 space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label for="ai-provider-select" class="block text-xs font-bold text-slate-300 mb-1">1. 選擇 API 串接模式 (Provider)</label>
+                <select id="ai-provider-select" class="w-full rounded-xl bg-slate-800 border border-slate-600 px-3 py-2 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-purple-400">
+                  <option value="gemini_direct">Google Gemini API 直連 (Structured JSON Schema)</option>
+                  <option value="custom_backend">自架 Python FastAPI 後端 (POST /api/analyze-anatomy)</option>
+                  <option value="openai_compat">OpenAI / OpenRouter 相容端點 (Chat Completions JSON)</option>
+                </select>
+              </div>
+              <div>
+                <label for="ai-model-input" class="block text-xs font-bold text-slate-300 mb-1">2. 模型名稱 或 後端 Endpoint URL</label>
+                <input id="ai-model-input" type="text" value="gemini-2.5-flash" placeholder="例：gemini-2.5-flash 或 http://localhost:8000/api/analyze-anatomy" class="w-full rounded-xl bg-slate-800 border border-slate-600 px-3 py-2 text-xs sm:text-sm text-emerald-300 font-mono-code focus:outline-none focus:border-purple-400" />
+              </div>
+              <div>
+                <label for="ai-api-key-input" class="block text-xs font-bold text-slate-300 mb-1">3. API Key (僅存於本機瀏覽器，不外傳第三方)</label>
+                <div class="flex gap-1.5">
+                  <input id="ai-api-key-input" type="password" placeholder="在此貼上 AIzaSy... 或 sk-..." class="flex-1 rounded-xl bg-slate-800 border border-slate-600 px-3 py-2 text-xs sm:text-sm text-white font-mono-code focus:outline-none focus:border-purple-400" />
+                  <button id="ai-toggle-key-vis" type="button" class="px-2.5 py-2 rounded-xl bg-slate-800 border border-slate-600 text-xs text-slate-300 hover:text-white" title="顯示/隱藏金鑰">👁️</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <div class="md:col-span-8">
+                <label for="ai-extra-prompt-input" class="block text-xs font-bold text-slate-300 mb-1">4. 跑考共筆補充提示詞 (System / Extra Context，會自動附加至每次 API 請求)</label>
+                <input id="ai-extra-prompt-input" type="text" value="請依台灣醫學院大體解剖跑台考試習慣，將字根拆分為 prefix / adj. / n.，並標註重要伴行血管神經與深淺分層。" class="w-full rounded-xl bg-slate-800 border border-slate-600 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-400" />
+              </div>
+              <div class="md:col-span-4 flex items-center justify-end gap-2">
+                <button id="ai-save-config-btn" type="button" class="btn-3d btn-3d-green px-3.5 py-2 rounded-xl text-xs font-extrabold">
+                  💾 儲存 API 設定
+                </button>
+                <button id="ai-clear-config-btn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-rose-300">
+                  清除金鑰
+                </button>
+                <button id="ai-show-log-btn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-sky-300">
+                  📡 檢視 API Payload
+                </button>
+              </div>
+            </div>
+
+            <!-- Live API Request/Response Inspector -->
+            <div id="ai-debug-payload-box" class="hidden pt-2">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                <span>最近一次 AI Agent API 請求與結構化回傳 JSON (可直接複製供後端除錯)：</span>
+                <span id="ai-latency-label" class="font-mono-code text-emerald-400">Ready</span>
+              </div>
+              <pre id="ai-debug-json-pre" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-sky-300 font-mono-code overflow-x-auto max-h-48 leading-relaxed"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Agent Input Bar -->
+        <div class="mt-5 bg-slate-50 p-4 rounded-2xl border-2 border-slate-200">
+          <label for="ai-term-input" class="block text-xs font-extrabold text-slate-700 mb-2">
+            🤖 輸入新解剖學名詞（可測試預設學術詞彙如 <code class="text-purple-700">Suprascapular n.</code>、<code class="text-purple-700">Profunda brachii a.</code>、<code class="text-purple-700">Flexor carpi ulnaris m.</code> 或任意自訂名詞）：
+          </label>
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <input id="ai-term-input" type="text" value="Suprascapular n." placeholder="輸入英文解剖構造名稱，例如 Suprascapular n." class="flex-1 rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm font-semibold bg-white focus:outline-none focus:border-purple-500" />
+            <button id="ai-analyze-btn" type="button" class="btn-3d bg-purple-600 border-purple-800 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold whitespace-nowrap">
+              ✨ 啟動 AI Agent 拆解字根與脈絡
+            </button>
+            <button id="kb-manual-new-btn" type="button" class="btn-3d btn-3d-neutral px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap">
+              ➕ 純手動空白建檔
+            </button>
+          </div>
+
+          <!-- Quick Preset Chips for instant testing -->
+          <div class="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+            <span class="text-slate-500 font-bold">點擊快速測試 AI Agent 自動拆解與重點填入：</span>
+            <button type="button" data-preset="Suprascapular n." class="ai-preset-chip px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-purple-500 hover:text-purple-700 font-mono-code font-semibold">Suprascapular n.</button>
+            <button type="button" data-preset="Profunda brachii a." class="ai-preset-chip px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-purple-500 hover:text-purple-700 font-mono-code font-semibold">Profunda brachii a.</button>
+            <button type="button" data-preset="Flexor carpi ulnaris m." class="ai-preset-chip px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-purple-500 hover:text-purple-700 font-mono-code font-semibold">Flexor carpi ulnaris m.</button>
+            <button type="button" data-preset="Extensor carpi radialis brevis m." class="ai-preset-chip px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-purple-500 hover:text-purple-700 font-mono-code font-semibold">Extensor carpi radialis brevis m.</button>
+            <button type="button" data-preset="Abductor digiti minimi m." class="ai-preset-chip px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-purple-500 hover:text-purple-700 font-mono-code font-semibold">Abductor digiti minimi m.</button>
+            <button type="button" data-preset="Subclavius m." class="ai-preset-chip px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-purple-500 hover:text-purple-700 font-mono-code font-semibold">Subclavius m.</button>
+          </div>
+
+          <!-- LIVE AI AGENT EXECUTION STATUS & PIPELINE MONITOR -->
+          <div id="ai-live-monitor" class="mt-4 p-4 rounded-2xl bg-slate-900 text-slate-100 border-2 border-purple-500/50 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span id="ai-live-dot" class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-purple-300">AI Agent 即時運作狀態監控 (Live Pipeline Status)</span>
+                <span id="ai-live-source-badge" class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-bold">
+                  已載入 Notebook 知識庫 + 字根解析引擎
+                </span>
+              </div>
+              <span id="ai-live-step-summary" class="text-xs font-mono-code text-sky-300 font-bold">狀態：已完成結構化解析並自動填入下方欄位</span>
+            </div>
+
+            <!-- 4-Step Pipeline Progress Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div id="ai-step-1" class="p-2 rounded-xl bg-slate-800 border border-emerald-500/60 text-emerald-300 font-bold flex items-center gap-1.5">
+                <span>✅ 1. 詞彙正規化</span>
+              </div>
+              <div id="ai-step-2" class="p-2 rounded-xl bg-slate-800 border border-emerald-500/60 text-emerald-300 font-bold flex items-center gap-1.5">
+                <span>✅ 2. 字根與詞性拆解</span>
+              </div>
+              <div id="ai-step-3" class="p-2 rounded-xl bg-slate-800 border border-emerald-500/60 text-emerald-300 font-bold flex items-center gap-1.5">
+                <span>✅ 3. 檢索連續脈絡與分區</span>
+              </div>
+              <div id="ai-step-4" class="p-2 rounded-xl bg-slate-800 border border-emerald-500/60 text-emerald-300 font-bold flex items-center gap-1.5">
+                <span>✅ 4. 填入跑台重點預覽</span>
+              </div>
+            </div>
+
+            <!-- Real-time Execution Log -->
+            <div id="ai-live-log-list" class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 font-mono-code text-[11px] text-slate-300 space-y-1 max-h-28 overflow-y-auto">
+              <!-- Populated dynamically during AI Agent execution -->
+            </div>
+          </div>
+
+          <!-- AI Agent Review & Edit Modal/Drawer (Always visible when analyzed so user sees filled results immediately) -->
+          <div id="ai-review-drawer" class="mt-4 p-5 rounded-2xl bg-white border-2 border-purple-400 shadow-md space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                <h4 class="font-extrabold text-sm text-slate-800">AI Agent 結構化解析預覽（可人工微調後寫入資料庫）</h4>
+              </div>
+              <button id="ai-close-drawer-btn" type="button" class="text-xs font-bold text-slate-400 hover:text-slate-700">✕ 關閉</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label for="ai-field-en" class="block text-xs font-bold text-slate-600 mb-1">英文標準名 (Terminologia Anatomica)</label>
+                <input id="ai-field-en" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold" />
+              </div>
+              <div>
+                <label for="ai-field-zh" class="block text-xs font-bold text-slate-600 mb-1">中文譯名</label>
+                <input id="ai-field-zh" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold" />
+              </div>
+              <div>
+                <label for="ai-field-cat" class="block text-xs font-bold text-slate-600 mb-1">構造分類</label>
+                <select id="ai-field-cat" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white">
+                  <option value="Nerve">Nerve (神經)</option>
+                  <option value="Artery">Artery (動脈)</option>
+                  <option value="Muscle">Muscle (肌肉)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Morpheme Breakdown Editor -->
+            <div>
+              <label for="ai-field-morphemes" class="block text-xs font-bold text-slate-600 mb-1">
+                字根詞源與詞性拆解格式（格式：<code class="text-purple-700">字根|詞性(prefix/adj./n.)|字義</code>，以 <code class="text-purple-700">+</code> 分隔）：
+              </label>
+              <input id="ai-field-morphemes" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm font-mono-code" />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label for="ai-field-pathway" class="block text-xs font-bold text-slate-600 mb-1">連續構造脈絡（上游起源 → 本構造 → 下游分支）</label>
+                <input id="ai-field-pathway" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm" />
+              </div>
+              <div>
+                <label for="ai-field-region" class="block text-xs font-bold text-slate-600 mb-1">同區構造分組與支配關係</label>
+                <input id="ai-field-region" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label for="ai-field-callout" class="block text-xs font-bold text-slate-600 mb-1">💡 跑台辨識口訣與伴行特徵 (自動轉為 Notion Callout 區塊)</label>
+                <input id="ai-field-callout" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm" />
+              </div>
+              <div>
+                <label for="ai-field-clinical" class="block text-xs font-bold text-slate-600 mb-1">🩺 臨床與跑考陷阱補充 (自動轉為 Notion 臨床區塊)</label>
+                <input id="ai-field-clinical" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm" />
+              </div>
+            </div>
+
+            <!-- Live Visual Card Preview of AI Parsed Output -->
+            <div class="p-4 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-purple-900">👁️ AI 解析結果即時視覺化預覽（修改上方任一欄位會同步更新）：</span>
+                <span id="ai-preview-status-tag" class="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-200 text-purple-900">已自動填入</span>
+              </div>
+              <div id="ai-visual-morpheme-preview" class="flex flex-wrap items-center gap-1.5"></div>
+              <div id="ai-visual-notes-preview" class="space-y-1.5 text-xs"></div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <span id="ai-save-feedback-msg" class="text-xs font-extrabold text-emerald-700"></span>
+              <button id="ai-save-to-kb-btn" type="button" class="btn-3d btn-3d-green px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold">
+                ✅ 確認無誤，寫入單字卡與測驗題庫
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lower Split: Left Quizlet-Style Flashcard Deck & List / Right Notion-Style Rich Block Editor -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left 5 Cols: Quizlet Flashcard & Term Directory -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Interactive Quizlet Flip Card -->
+          <div class="bg-white rounded-3xl border-2 border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-sky-600">Quizlet 互動翻轉單字卡</span>
+              <button id="kb-flip-card-btn" type="button" class="text-xs font-bold text-sky-600 hover:underline">
+                🔄 點擊卡片或此處翻面 (正面/背面)
+              </button>
+            </div>
+
+            <div id="kb-flashcard-box" class="min-h-[210px] rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 flex flex-col justify-between cursor-pointer select-none shadow-md transition transform hover:-translate-y-0.5">
+              <!-- Populated dynamically by JS -->
+            </div>
+
+            <div class="flex items-center justify-between mt-3">
+              <button id="kb-prev-card" type="button" class="btn-3d btn-3d-neutral px-3.5 py-1.5 rounded-xl text-xs font-bold">← 上一張</button>
+              <span id="kb-card-index-label" class="text-xs font-bold text-slate-500">1 / 8</span>
+              <button id="kb-next-card" type="button" class="btn-3d btn-3d-neutral px-3.5 py-1.5 rounded-xl text-xs font-bold">下一張 →</button>
+            </div>
+          </div>
+
+          <!-- Directory List -->
+          <div class="bg-white rounded-3xl border-2 border-slate-200 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-extrabold text-sm text-slate-800">📚 詞彙總覽（點擊切換右側 Notion 筆記）</h3>
+            </div>
+            <div id="kb-entity-list" class="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 7 Cols: Notion-Style Block Workspace -->
+        <div class="lg:col-span-7">
+          <div class="bg-white rounded-3xl border-2 border-slate-200 p-6 shadow-sm min-h-full flex flex-col justify-between">
+            <div>
+              <!-- Page Header -->
+              <div class="pb-4 border-b border-slate-100 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span id="notion-page-cat" class="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold">Nerve</span>
+                    <span class="text-xs text-slate-400 font-mono-code" id="notion-page-id">ID: thoracodorsal_n</span>
+                  </div>
+                  <h3 id="notion-page-title" class="text-2xl font-black text-slate-800 mt-1">Thoracodorsal n. (胸背神經)</h3>
+                </div>
+                <span class="text-xs font-semibold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                  Notion 風格區塊編輯器
+                </span>
+              </div>
+
+              <!-- Structured Metadata Properties (Notion Database Properties style) -->
+              <div class="my-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                <div class="grid grid-cols-3 gap-2 items-center">
+                  <span class="font-bold text-slate-500">🧩 字根詞源拆解</span>
+                  <div id="notion-prop-morphemes" class="col-span-2 flex flex-wrap gap-1.5"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 items-center">
+                  <span class="font-bold text-slate-500">🌿 連續構造脈絡</span>
+                  <div id="notion-prop-pathway" class="col-span-2 font-semibold text-slate-700"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 items-center">
+                  <span class="font-bold text-slate-500">🗂️ 同區構造分組</span>
+                  <div id="notion-prop-region" class="col-span-2 font-semibold text-slate-700"></div>
+                </div>
+              </div>
+
+              <!-- Notion Content Blocks List -->
+              <div class="mt-5">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400">筆記內容區塊 (Blocks)</span>
+                </div>
+                <div id="notion-blocks-container" class="space-y-3">
+                  <!-- Dynamically rendered blocks (Callout, Bullet, Image Attachment, Video/Audio Note) -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Add New Block Toolbar (Notion `/` command bar style) -->
+            <div class="mt-6 pt-4 border-t-2 border-slate-100 space-y-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-500">新增區塊類型：</span>
+                <select id="notion-new-block-type" class="rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-bold bg-white">
+                  <option value="callout">💡 跑台辨識口訣 (Callout)</option>
+                  <option value="clinical">🩺 臨床與解剖重點 (Paragraph)</option>
+                  <option value="media">🎬 影音/共筆連結註記 (Media Reference)</option>
+                </select>
+                <label for="notion-block-image-input" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition">
+                  🖼️ 插入本機標本/手繪圖區塊
+                  <input id="notion-block-image-input" type="file" accept="image/*" class="hidden" />
+                </label>
+              </div>
+              <div class="flex gap-2">
+                <input id="notion-new-block-text" type="text" placeholder="輸入筆記文字、跑台口訣或影片時間軸重點，按右側按鈕新增區塊..." class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2 text-xs sm:text-sm" />
+                <button id="notion-add-block-btn" type="button" class="btn-3d btn-3d-blue px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap">
+                  ＋ 新增區塊
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         VIEW 4: ARCHITECTURE & OPEN-SOURCE DATA EXPORT (架構設計與 JSON 匯出)
+         ======================================================================= -->
+    <section id="view-schema" class="space-y-6 hidden">
+      <div class="bg-white rounded-3xl border-2 border-slate-200 p-6 shadow-sm space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">Module 04 · 開源維護架構與學術資料匯入介面</span>
+            <h2 class="text-xl font-black text-slate-800 mt-1">模組化資料結構 (JSON Schema) 與正式學術資料對接規範</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              本原型將「狀態資料層 (`APP_STATE`)」與「UI 渲染層」完全解耦。未來引入正式解剖學資料庫或接入後端 (Supabase / PostgreSQL) 時，只需匯入符合下方結構的 JSON 即可自動生成所有關卡。
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="schema-copy-json-btn" type="button" class="btn-3d btn-3d-blue px-4 py-2 rounded-xl text-xs font-extrabold">
+              📋 複製目前完整題庫 JSON
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+            <h3 class="font-extrabold text-slate-800 text-sm">1. 字根拆解層 (`morphemes[]`)</h3>
+            <p class="text-slate-600 leading-relaxed">每個詞彙由陣列儲存字根順序，包含 <code class="text-sky-700">part</code> (字根字串)、<code class="text-sky-700">pos</code> (prefix / adj. / n.) 與 <code class="text-sky-700">meaning</code>，支援自動產生拼圖積木與干擾項。</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+            <h3 class="font-extrabold text-slate-800 text-sm">2. 連續拓撲層 (`pathwayTrees`)</h3>
+            <p class="text-slate-600 leading-relaxed">以節點與邊（Parent → Landmark → Child）定義血管或神經的分段延續與分支，不綁死單一題目，可動態抽換任意節點作為填空題。</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+            <h3 class="font-extrabold text-slate-800 text-sm">3. 區域分組與圖釘 (`regionalGroups` & `pins`)</h3>
+            <p class="text-slate-600 leading-relaxed">支援如「前臂前側 4+1+3」的任意層次配額設定，以及使用者本地照片上的百分比座標 (<code class="text-sky-700">xPercent, yPercent</code>) 響應式圖釘定位。</p>
+          </div>
+        </div>
+
+        <!-- Google Sites 5-Module Architecture & Embed Guide -->
+        <div class="p-5 rounded-2xl bg-sky-50/70 border-2 border-sky-200 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <span class="px-2.5 py-0.5 rounded-md bg-sky-600 text-white text-xs font-extrabold">Google Sites 模組化部署指南</span>
+              <h3 class="text-base sm:text-lg font-black text-slate-800 mt-1">🧩 5 大獨立分區模組與核心共用層架構 (`anatospot_google_sites_modules.zip`)</h3>
+            </div>
+            <span class="text-xs font-bold text-sky-800 bg-white px-3 py-1 rounded-xl border border-sky-200">
+              支援「內嵌程式碼 (Embed code)」與「GitHub Pages 依網址內嵌 (By URL)」
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-2.5 text-xs">
+            <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1">
+              <div class="font-extrabold text-sky-700">分區模組 01</div>
+              <div class="font-mono-code text-[11px] text-slate-800 font-bold break-all">module_1_morpheme_builder.html</div>
+              <p class="text-slate-500">單一構造字根詞源及前後綴拆解闖關 (Layer 1)</p>
+            </div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1">
+              <div class="font-extrabold text-rose-700">分區模組 02</div>
+              <div class="font-mono-code text-[11px] text-slate-800 font-bold break-all">module_2_pathway_tree.html</div>
+              <p class="text-slate-500">連續構造分段變化樹狀圖 (動脈/神經/靜脈 4 棵樹)</p>
+            </div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1">
+              <div class="font-extrabold text-emerald-700">分區模組 03</div>
+              <div class="font-mono-code text-[11px] text-slate-800 font-bold break-all">module_3_regional_matrix.html</div>
+              <p class="text-slate-500">同區構造分層歸納 (前臂 4+1+3、後側 6+5、腋窩間隙)</p>
+            </div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1">
+              <div class="font-extrabold text-amber-700">分區模組 04</div>
+              <div class="font-mono-code text-[11px] text-slate-800 font-bold break-all">module_4_photo_pin_spot.html</div>
+              <p class="text-slate-500">本機大體/模型照片上傳與圖釘 (Pin) 30秒倒數抽考</p>
+            </div>
+            <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-1">
+              <div class="font-extrabold text-purple-700">分區模組 05</div>
+              <div class="font-mono-code text-[11px] text-slate-800 font-bold break-all">module_5_ai_kb_notion.html</div>
+              <p class="text-slate-500">AI Agent 結構化解析 + Quizlet 閃卡 + Notion 筆記庫</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-500">即時資料庫狀態檢視器 (Live JSON State Inspector)：</span>
+            <span id="schema-copy-toast" class="text-xs font-bold text-emerald-600 hidden">✅ 已複製到剪貼簿！</span>
+          </div>
+          <pre id="schema-json-viewer" class="p-4 rounded-2xl bg-slate-900 text-emerald-300 font-mono-code text-xs overflow-x-auto max-h-[380px] leading-relaxed"></pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       GITHUB PAGES 模組化引入架構 (與 HTML 結構完全分離，易於開源協作維護)
+       ========================================================================= -->
+  <!-- 1. 核心共用層 (01_core_shared) -->
+  <script src="./src/core/anatomy_data.js"></script>
+  <script src="./src/core/ai_agent_service.js"></script>
+
+  <!-- 2. 五大獨立功能模組 (src/modules) -->
+  <script src="./src/modules/layer1_morpheme.js"></script>
+  <script src="./src/modules/layer2_pathway.js"></script>
+  <script src="./src/modules/layer3_regional.js"></script>
+  <script src="./src/modules/spot_pin_quiz.js"></script>
+  <script src="./src/modules/kb_notion.js"></script>
+
+  <!-- 3. 主控制器與事件初始化 -->
+  <script src="./src/modules/app_init.js"></script>
+</body>
+</html>
